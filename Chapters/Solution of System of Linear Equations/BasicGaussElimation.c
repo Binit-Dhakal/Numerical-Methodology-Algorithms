@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include<stdlib.h>
 
-void swap(float *a, float *b) {
-    float temp;
-    temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
+int forward_elimination(float *arr, int ord, int len_arr);
+void upper_triangular_matrix_print(float *arr, int ord);
+void backward_elimination(float *arr, int ord);
+void swap(float *a, float *b);
 
 int main () {
     int ord;
@@ -18,58 +15,84 @@ int main () {
     float *arr = malloc(len_arr*sizeof(float));
 
     // Input Logic
-    printf("Enter the Augumented Matrix: \n");
+    printf("Enter the Augumented Matrix(%d): \n", len_arr);
     for (int i = 0; i < len_arr; i++) {
         scanf("%f", &arr[i]);
     }
+    
+    int has_pivot;
+    has_pivot = forward_elimination(arr, ord, len_arr);
+    
+    upper_triangular_matrix_print(arr, ord);
 
-    // Main Logic
-    int main_pivot = 0, pot_pivot, operation_ele, range = 0;
-    float factor;
-    while (main_pivot < len_arr) {
-        pot_pivot = main_pivot;
-        while (pot_pivot < len_arr) {
-            /* 
-                If potential pivot position has element 0, then we search for other contenstants for pivot 
-                and swap with our main_pivot  
-            */
-            if (arr[pot_pivot] != 0) {
-                if (pot_pivot == main_pivot){
-                    break;
-                }
-
-                // we need to swap elements if pot_pivot is not same as main_pivot
-                for (int i = 0; i <= ord; i++) {
-                    swap(&arr[main_pivot+i], &arr[pot_pivot+i]); 
-                }
-            }
-            pot_pivot += (ord + 1);
-        }
-
-        if (pot_pivot > len_arr) {
-            printf("The potential pivot position not found\n");
-            break;
-        }
-
-        // Forward Elimination - Generation of upper triangular matrix
-        operation_ele = main_pivot + (ord + 1);
-        while (operation_ele < len_arr) {
-            factor = arr[operation_ele] / arr[main_pivot];
-            arr[operation_ele] = 0;
-            
-            for (int i = 1; i <= ord-range; i++) {
-                if (operation_ele + i < len_arr)
-                    arr[operation_ele+i] = arr[operation_ele+i] - factor * arr[main_pivot+i];
-            }
-
-            operation_ele += (ord + 1);
-        }
-
-        range += 1;
-        main_pivot = (main_pivot + 1) + (ord + 1);
+    if (has_pivot == 1){
+        backward_elimination(arr, ord);
     }
 
-    // Backward Elimination
+    free(arr);
+    return 0;
+}
+
+void swap(float *a, float *b) {
+    float temp;
+    temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int forward_elimination(float *arr, int ord, int len_arr){
+    /*
+    - First check if the pivot position has 0; if yes check all potential pivot position if non zero element exists and
+    swap row if the case exists
+    - then carry forward elimination operating in all the row below
+    */
+    int pivot_row, pivot_col = 0;
+
+    while (pivot_col < ord) {
+        pivot_row = pivot_col;
+        
+        // finding the row with potential pivot position not 0
+        while (arr[pivot_row*(ord+1) + pivot_col] == 0 && pivot_row < ord) {
+            pivot_row += 1;
+        }
+
+        if (pivot_row == ord){
+            printf("No pivot position found for row - %d", pivot_col);
+            return 0;
+        }
+
+        // swap the row we are operating with pivot_row
+        for (int col = pivot_col; col < ord+1 && pivot_col != pivot_row; col++) {
+            swap(&arr[pivot_row*(ord+1)+col], &arr[pivot_col*(ord+1)+col]);
+        }
+        
+        // Forward Elimination
+        pivot_row = pivot_col;
+        float factor;
+        for (int i = pivot_row; i < ord-1; i++) {
+            factor = arr[(i+1)*(ord+1)+pivot_col] / arr[pivot_row*(ord+1)+pivot_col];
+            arr[(i+1)*(ord+1)+pivot_col] = 0;
+            for (int j = pivot_col+1; j < ord+1; j++) {
+                arr[(i+1)*(ord+1) + j] -= factor * arr[pivot_row*(ord+1)+j];      
+            }
+        } 
+        pivot_col += 1;
+    }
+    return 1;
+}
+
+void upper_triangular_matrix_print(float *arr, int ord) {
+    printf("--------------------------------------\n");
+    printf("The Upper Triangular Matrix: \n");
+    for (int i = 0; i < ord; i++) {
+        for (int j = 0; j < ord+1; j++) {
+            printf("%f  ", arr[i*(ord+1) + j]);
+        }
+        printf("\n");
+    }
+}
+
+void backward_elimination(float *arr, int ord) {
     float *sol = malloc(ord * sizeof(float));
     float sum;
     for (int i = ord-1; i >= 0; i--) {
@@ -79,18 +102,7 @@ int main () {
         }
         sol[i] = (arr[i*(ord+1)+ord]-sum) / (arr[i*(ord+1)+i]);
     }
-
-
-    // Output Logic
-    printf("--------------------------------------\n");
-    printf("The Upper Triangular Matrix: \n");
-    for (int i = 0; i < ord; i++) {
-        for (int j = 0; j < ord+1; j++) {
-            printf("%f  ", arr[i*(ord+1) + j]);
-        }
-        printf("\n");
-    }
-
+    
     // Solution
     printf("--------------------------------------\n");
     printf("Solution Matrix: \n");
@@ -98,6 +110,5 @@ int main () {
         printf("X[%d] = %f\n",i,sol[i]);
     }
 
-    free(arr);
-    return 0;
+    free(sol);
 }

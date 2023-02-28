@@ -3,3 +3,5 @@
 .vscode
 .ipynb_checkpoints
 *.ipynb
+GaussJordan.c
+a.out
